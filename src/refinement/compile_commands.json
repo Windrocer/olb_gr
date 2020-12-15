@@ -1,0 +1,16 @@
+[
+    {
+        "arguments": [
+            "g++", 
+            "-c", 
+            "-g", 
+            "-Wall", 
+            "-DOLB_DEBUG", 
+            "-std=c++14", 
+            "-I../../src", 
+            "-I../../src/", 
+            "-I../../src/external", 
+            "-I../../src/external/zlib"
+        ]
+    }
+]
