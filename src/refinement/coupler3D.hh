@@ -196,13 +196,13 @@ void FineCoupler3D<T,DESCRIPTOR>::store()
 			T pi[util::TensorVal<DESCRIPTOR>::n] {};
 			Cell<T,DESCRIPTOR> coarseCell;
 			coarseLattice.get(pos, coarseCell);
-///			lbHelpers<T,DESCRIPTOR>::computeRhoU(coarseCell, rho, u);
+			lbHelpers<T,DESCRIPTOR>::computeRhoU(coarseCell, rho, u);
 //			coarseCell.computeRhoU(rho, u);
-//			lbHelpers<T,DESCRIPTOR>::computeFneq(coarseCell, fNeq, rho, u);
-			coarseCell.computeAllMomenta(rho, u, pi);
-			for (int iPop = 0; iPop < DESCRIPTOR::q; ++iPop) {
-				fNeq[iPop] = firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(iPop, pi);
-			}
+			lbHelpers<T,DESCRIPTOR>::computeFneq(coarseCell, fNeq, rho, u);
+//			coarseCell.computeAllMomenta(rho, u, pi);
+//			for (int iPop = 0; iPop < DESCRIPTOR::q; ++iPop) {
+//				fNeq[iPop] = firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(iPop, pi);
+//			}
 			
 			_c2f_rho[i][j] = Vector<T,1>(rho);
 //			for ( int id = 0; id < DESCRIPTOR::d; ++id ) {
@@ -524,12 +524,12 @@ void FineCoupler3D<T,DESCRIPTOR>::interpolate()
 			T u[DESCRIPTOR::d] {};
 			T fNeq[DESCRIPTOR::q] {};
 			T pi[util::TensorVal<DESCRIPTOR>::n] {};
-//			lbHelpers<T,DESCRIPTOR>::computeRhoU(coarseCell, rho, u);
+			lbHelpers<T,DESCRIPTOR>::computeRhoU(coarseCell, rho, u);
 //			coarseCell.computeRhoU(rho, u);
-			coarseCell.computeAllMomenta(rho, u, pi);
-			for (int iPop = 0; iPop < DESCRIPTOR::q; ++iPop) {
-				fNeq[iPop] = firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(iPop, pi);
-			}
+//			coarseCell.computeAllMomenta(rho, u, pi);
+//			for (int iPop = 0; iPop < DESCRIPTOR::q; ++iPop) {
+//				fNeq[iPop] = firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(iPop, pi);
+//			}
 
 			_c2f_rho[i][j] = order2interpolation(Vector<T,1>(rho), _c2f_rho[i][j]);
 //			for ( int id = 0; id < DESCRIPTOR::d; ++id ) {
@@ -541,7 +541,7 @@ void FineCoupler3D<T,DESCRIPTOR>::interpolate()
 
 //			T fNeq[DESCRIPTOR::q] {};
 //			lbHelpers<T,DESCRIPTOR>::computeRhoU(coarseCell, rho, u);
-//			lbHelpers<T,DESCRIPTOR>::computeFneq(coarseCell, fNeq, rho, u);
+			lbHelpers<T,DESCRIPTOR>::computeFneq(coarseCell, fNeq, rho, u);
 
 			_c2f_fneq[i][j] = order2interpolation(Vector<T,DESCRIPTOR::q>(fNeq), 
 					_c2f_fneq[i][j]);
@@ -1223,16 +1223,16 @@ void computeRestrictedFneq(const SuperLattice3D<T,DESCRIPTOR>& lattice,
 		Cell<T,DESCRIPTOR> cell;
 		lattice.get(neighbour, cell);
 
-//		T fNeq[DESCRIPTOR::q] {};
+		T fNeq[DESCRIPTOR::q] {};
 		T rho {};
 		T u[3] {};
-		T pi[util::TensorVal<DESCRIPTOR>::n] {};
-//		lbHelpers<T,DESCRIPTOR>::computeFneq(cell, fNeq);
-		cell.computeAllMomenta(rho, u, pi);
+//		T pi[util::TensorVal<DESCRIPTOR>::n] {};
+		lbHelpers<T,DESCRIPTOR>::computeFneq(cell, fNeq);
+//		cell.computeAllMomenta(rho, u, pi);
 
 		for (int jPop = 0; jPop < DESCRIPTOR::q; ++jPop) {
-//			restrictedFneq[jPop] += fNeq[jPop];
-			restrictedFneq[jPop] += firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(jPop, pi);
+			restrictedFneq[jPop] += fNeq[jPop];
+//			restrictedFneq[jPop] += firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(jPop, pi);
 		}
 	}
 
@@ -1264,16 +1264,16 @@ void CoarseCoupler3D<T,DESCRIPTOR>::couple()
 			T pi[util::TensorVal<DESCRIPTOR>::n] {};
 			Cell<T,DESCRIPTOR> fineCell;
 			fineLattice.get(finePos, fineCell);
-//			fineCell.computeRhoU(rho, u);
-			fineCell.computeAllMomenta(rho, u, pi);
+			fineCell.computeRhoU(rho, u);
+//			fineCell.computeAllMomenta(rho, u, pi);
 			const T uSqr = u[0]*u[0] + u[1]*u[1] + u[2]*u[2];
 //			const T uSqr = util::normSqr<T,DESCRIPTOR::d>(u);
 			for (int iPop=0; iPop < descriptors::q<DESCRIPTOR>(); ++iPop) {
 				fEq[iPop] = lbHelpers<T,DESCRIPTOR>::equilibrium(iPop, rho, u, uSqr);
 			}
-			for (int iPop = 0; iPop < DESCRIPTOR::q; ++iPop) {
-				fNeq[iPop] = firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(iPop, pi);
-			}
+//			for (int iPop = 0; iPop < DESCRIPTOR::q; ++iPop) {
+//				fNeq[iPop] = firstOrderLbHelpers<T,DESCRIPTOR>::fromPiToFneq(iPop, pi);
+//			}
 
 //			T fEq[DESCRIPTOR::q] {};
 //			Cell<T,DESCRIPTOR> fineCell;
@@ -1282,7 +1282,7 @@ void CoarseCoupler3D<T,DESCRIPTOR>::couple()
 
 //			T fNeq[DESCRIPTOR::q] {};
 			// Use restricted fneq
-//			computeRestrictedFneq(fineLattice, finePos, fNeq);
+			computeRestrictedFneq(fineLattice, finePos, fNeq);
 			// Alternative method for directly calculating fneq
 //			T rho{};
 //			T u[3] {};
